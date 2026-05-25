@@ -529,45 +529,278 @@ $(function () {
 const contactForm = document.querySelector(".get-in-touch form");
 
 if (contactForm) {
-    contactForm.addEventListener("submit", function(e) {
+    const EMAILJS_PUBLIC_KEY = "40P2XTvoAnP-N_mBB";
+    const EMAILJS_SERVICE_ID = "service_r487lsn";
+    const EMAILJS_TEMPLATE_ID = "template_3zh9xc4";
+
+    const nameEl = document.getElementById("name");
+    const emailEl = document.getElementById("email");
+    const phoneEl = document.getElementById("phone");
+    const companyEl = document.getElementById("company");
+    const designationEl = document.getElementById("Designation");
+    const requestTypeEl = document.getElementById("RequestproductInput");
+    const businessEl = document.getElementById("business");
+    const countryEl = document.getElementById("country");
+    const stateEl = document.getElementById("state");
+    const cityEl = document.getElementById("city");
+    const pincodeEl = document.getElementById("pincode");
+    const messageEl = document.getElementById("message");
+    const productInputEl = document.getElementById("productInput");
+    const attachmentLinkEl = document.getElementById("attachmentLink");
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+
+    const requiredFieldsReady = nameEl && emailEl && phoneEl && companyEl && designationEl && requestTypeEl && businessEl && countryEl && stateEl && cityEl && pincodeEl && messageEl && productInputEl;
+
+    function showFieldError(errorId, message) {
+        const el = document.getElementById(errorId);
+        if (!el) return;
+        el.textContent = message;
+        el.classList.remove("d-none");
+    }
+
+    function clearFieldError(errorId) {
+        const el = document.getElementById(errorId);
+        if (!el) return;
+        el.textContent = "";
+        el.classList.add("d-none");
+    }
+
+    function getOrCreateFormStatus() {
+        let statusEl = document.getElementById("formStatus");
+        if (!statusEl) {
+            statusEl = document.createElement("div");
+            statusEl.id = "formStatus";
+            statusEl.className = "alert d-none mt-3";
+            contactForm.prepend(statusEl);
+        }
+        return statusEl;
+    }
+
+    function setFormStatus(type, text) {
+        const statusEl = getOrCreateFormStatus();
+        statusEl.classList.remove("d-none", "alert-success", "alert-danger", "alert-info");
+        statusEl.classList.add(`alert-${type}`);
+        statusEl.textContent = text;
+    }
+
+    function clearFormStatus() {
+        const statusEl = document.getElementById("formStatus");
+        if (!statusEl) return;
+        statusEl.classList.add("d-none");
+        statusEl.textContent = "";
+    }
+
+    function bindCheckboxDropdown(inputEl, dropdownEl) {
+        if (!inputEl || !dropdownEl) return;
+        const checkboxes = dropdownEl.querySelectorAll("input");
+
+        inputEl.addEventListener("click", function () {
+            dropdownEl.classList.toggle("d-none");
+        });
+
+        checkboxes.forEach(function (cb) {
+            cb.addEventListener("change", function () {
+                const selected = Array.from(checkboxes)
+                    .filter(function (i) { return i.checked; })
+                    .map(function (i) { return i.value; });
+                inputEl.value = selected.join("; ");
+                inputEl.dispatchEvent(new Event("change"));
+            });
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!e.target.closest(".position-relative") || !dropdownEl.closest(".position-relative").contains(e.target)) {
+                dropdownEl.classList.add("d-none");
+            }
+        });
+    }
+
+    bindCheckboxDropdown(document.getElementById("productInput"), document.getElementById("productDropdown"));
+    bindCheckboxDropdown(document.getElementById("RequestproductInput"), document.getElementById("RequestproductDropdown"));
+    bindCheckboxDropdown(document.getElementById("business"), document.getElementById("businessDropdown"));
+
+    if (countryEl && stateEl && cityEl) {
+        fetch("https://countriesnow.space/api/v0.1/countries/positions")
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data || !Array.isArray(data.data)) return;
+                data.data.forEach(function (c) {
+                    countryEl.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+                });
+            })
+            .catch(function () {
+                // Keep static country option if API fails.
+            });
+
+        countryEl.addEventListener("change", function () {
+            stateEl.innerHTML = '<option value="">State</option>';
+            cityEl.innerHTML = '<option value="">City</option>';
+            if (!this.value) return;
+
+            fetch("https://countriesnow.space/api/v0.1/countries/states", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ country: this.value })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    const states = data && data.data && Array.isArray(data.data.states) ? data.data.states : [];
+                    states.forEach(function (s) {
+                        stateEl.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+                    });
+                })
+                .catch(function () {
+                    // No-op: user can still type non-dependent fields.
+                });
+        });
+
+        stateEl.addEventListener("change", function () {
+            cityEl.innerHTML = '<option value="">City</option>';
+            if (!countryEl.value || !this.value) return;
+
+            fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    country: countryEl.value,
+                    state: this.value
+                })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    const cities = data && Array.isArray(data.data) ? data.data : [];
+                    cities.forEach(function (c) {
+                        const normalized = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        cityEl.innerHTML += `<option value="${normalized}">${normalized}</option>`;
+                    });
+                })
+                .catch(function () {
+                    // No-op: user can continue manually.
+                });
+        });
+    }
+
+    (function bindRealtimeValidation() {
+        function clearError(errorId) {
+            clearFieldError(errorId);
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+
+        if (nameEl) {
+            nameEl.addEventListener("input", function () {
+                this.value = this.value.replace(/[0-9]/g, "");
+                if (this.value.trim().length >= 2 && !/\d/.test(this.value)) {
+                    clearError("nameError");
+                }
+            });
+        }
+
+        if (emailEl) {
+            emailEl.addEventListener("input", function () {
+                if (emailRegex.test(this.value.trim())) {
+                    clearError("emailError");
+                }
+            });
+        }
+
+        if (designationEl) {
+            designationEl.addEventListener("input", function () {
+                this.value = this.value.replace(/[0-9]/g, "");
+                if (this.value.trim().length > 0 && !/\d/.test(this.value)) {
+                    clearError("designationError");
+                }
+            });
+        }
+
+        if (phoneEl) {
+            phoneEl.addEventListener("input", function () {
+                this.value = this.value.replace(/[a-zA-Z]/g, "");
+                if (this.value.trim().length > 0 && phoneRegex.test(this.value.trim())) {
+                    clearError("phoneError");
+                }
+            });
+        }
+
+        if (companyEl) {
+            companyEl.addEventListener("input", function () {
+                if (this.value.trim().length > 0) {
+                    clearError("companyError");
+                }
+            });
+        }
+
+        if (pincodeEl) {
+            pincodeEl.addEventListener("input", function () {
+                this.value = this.value.replace(/\D/g, "");
+                if (/^\d{4,10}$/.test(this.value)) {
+                    clearError("pincodeError");
+                }
+            });
+        }
+
+        if (countryEl) {
+            countryEl.addEventListener("change", function () {
+                if (this.value) {
+                    clearError("locationError");
+                }
+            });
+        }
+
+        if (stateEl) {
+            stateEl.addEventListener("change", function () {
+                if (countryEl.value) {
+                    clearError("locationError");
+                }
+            });
+        }
+
+        if (cityEl) {
+            cityEl.addEventListener("change", function () {
+                if (countryEl.value) {
+                    clearError("locationError");
+                }
+            });
+        }
+
+        if (productInputEl) {
+            productInputEl.addEventListener("change", function () {
+                if (this.value.trim().length > 0) {
+                    clearError("productError");
+                }
+            });
+        }
+
+        if (requestTypeEl) {
+            requestTypeEl.addEventListener("change", function () {
+                if (this.value.trim().length > 0) {
+                    clearError("requestError");
+                }
+            });
+        }
+
+        if (businessEl) {
+            businessEl.addEventListener("change", function () {
+                if (this.value.trim().length > 0) {
+                    clearError("businessError");
+                }
+            });
+        }
+    }());
+
+    // File attachments are replaced by optional cloud-share URL field for free-form providers.
+
+    contactForm.addEventListener("submit", function (e) {
         e.preventDefault();
+        clearFormStatus();
 
-        const nameEl = document.getElementById("name");
-        const emailEl = document.getElementById("email");
-        const phoneEl = document.getElementById("phone");
-        const companyEl = document.getElementById("company");
-        const designationEl = document.getElementById("Designation");
-        const requestTypeEl = document.getElementById("RequestproductInput");
-        const businessEl = document.getElementById("business");
-        const countryEl = document.getElementById("country");
-        const stateEl = document.getElementById("state");
-        const cityEl = document.getElementById("city");
-        const pincodeEl = document.getElementById("pincode");
-        const messageEl = document.getElementById("message");
-        const productInputEl = document.getElementById("productInput");
-
-        // Per-field inline error helpers
-        function showFieldError(errorId, message) {
-            const el = document.getElementById(errorId);
-            if (!el) return;
-            el.textContent = message;
-            el.classList.remove("d-none");
-        }
-
-        function clearFieldError(errorId) {
-            const el = document.getElementById(errorId);
-            if (!el) return;
-            el.textContent = "";
-            el.classList.add("d-none");
-        }
-
-        // Clear all field errors first
-        ["nameError","emailError","phoneError","companyError","designationError",
-         "requestError","businessError","productError","locationError","pincodeError"].forEach(clearFieldError);
-
-        if (!nameEl || !emailEl || !phoneEl || !companyEl || !designationEl || !requestTypeEl || !businessEl || !countryEl || !stateEl || !cityEl || !pincodeEl || !messageEl || !productInputEl) {
+        if (!requiredFieldsReady) {
+            setFormStatus("danger", "Form is not fully available. Please refresh and try again.");
             return;
         }
+
+        ["nameError", "emailError", "phoneError", "companyError", "designationError", "requestError", "businessError", "productError", "locationError", "pincodeError"].forEach(clearFieldError);
 
         const name = nameEl.value.trim();
         const email = emailEl.value.trim();
@@ -581,20 +814,15 @@ if (contactForm) {
         const city = cityEl.value;
         const pincode = pincodeEl.value.trim();
         const productInput = productInputEl.value.trim();
+        const message = messageEl.value.trim();
+        const attachmentLink = attachmentLinkEl ? attachmentLinkEl.value.trim() : "";
 
-        // Email regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        // Phone regex – digits, spaces, +, -, parentheses only (any length)
         const phoneRegex = /^[\d\s\+\-\(\)]+$/;
-
         let hasError = false;
 
-        if (!name || name.length < 2) {
+        if (!name || name.length < 2 || /\d/.test(name)) {
             showFieldError("nameError", "Please enter a valid name.");
-            hasError = true;
-        } else if (/\d/.test(name)) {
-            showFieldError("nameError", "Name should not contain numbers.");
             hasError = true;
         }
 
@@ -613,11 +841,8 @@ if (contactForm) {
             hasError = true;
         }
 
-        if (!designation) {
-            showFieldError("designationError", "Designation is required.");
-            hasError = true;
-        } else if (/\d/.test(designation)) {
-            showFieldError("designationError", "Designation should not contain numbers.");
+        if (!designation || /\d/.test(designation)) {
+            showFieldError("designationError", "Please enter a valid designation.");
             hasError = true;
         }
 
@@ -642,314 +867,72 @@ if (contactForm) {
         }
 
         if (!pincode || !/^\d{4,10}$/.test(pincode)) {
-            showFieldError("pincodeError", "Please enter a valid pincode (digits only, 4–10 digits).");
+            showFieldError("pincodeError", "Please enter a valid pincode (digits only, 4-10 digits).");
             hasError = true;
         }
 
         if (hasError) return;
 
-        this.submit(); // remove this if using AJAX later
+        const templateParams = {
+            to_email: "info@bargroupindia.com",
+            from_name: name,
+            from_email: email,
+            reply_to: email,
+            subject: `New Inquiry | ${requestType || "General"} | ${name}`,
+            name: name,
+            email: email,
+            phone: phone,
+            company: company,
+            designation: designation,
+            request_type: requestType,
+            business_type: business,
+            products: productInput,
+            country: country,
+            state: state,
+            city: city,
+            pincode: pincode,
+            message: message || "NA",
+            attachment_link: attachmentLink || "NA",
+            source_page: window.location.href,
+            submitted_at: new Date().toLocaleString("en-IN")
+        };
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add("disabled");
+        }
+        setFormStatus("info", "Sending your message...");
+
+        if (!window.emailjs || typeof window.emailjs.send !== "function") {
+            setFormStatus("danger", "Email service is not initialized. Please refresh and try again.");
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove("disabled");
+            }
+            return;
+        }
+
+        window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+        window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+            .then(function (response) {
+                console.info("EmailJS send success", response);
+                contactForm.reset();
+                setFormStatus("success", "Thank you. Your message has been sent successfully.");
+            })
+            .catch(function (err) {
+                console.error("EmailJS send failed", err);
+                const message = err && err.text ? err.text : (err && err.message ? err.message : "Submission failed");
+                setFormStatus("danger", `Unable to send right now (${message}). Please try again or email info@bargroupindia.com directly.`);
+            })
+            .finally(function () {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("disabled");
+                }
+            });
     });
 }
-
-
-const countryEl = document.getElementById("country");
-const stateEl = document.getElementById("state");
-const cityEl = document.getElementById("city");
-
-// Load countries
-fetch("https://countriesnow.space/api/v0.1/countries/positions")
-  .then(res => res.json())
-  .then(data => {
-    data.data.forEach(c => {
-      countryEl.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    });
-  });
-
-// On country change → load states
-countryEl.addEventListener("change", function () {
-    stateEl.innerHTML = "<option value=\"\">State</option>";
-    cityEl.innerHTML = "<option value=\"\">City</option>";
-
-  fetch("https://countriesnow.space/api/v0.1/countries/states", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ country: this.value })
-  })
-    .then(res => res.json())
-    .then(data => {
-      data.data.states.forEach(s => {
-        stateEl.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-      });
-    });
-});
-
-// On state change → load cities
-stateEl.addEventListener("change", function () {
-    cityEl.innerHTML = "<option value=\"\">City</option>";
-
-  fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      country: countryEl.value,
-      state: this.value
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      data.data.forEach(c => {
-        const normalized = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        cityEl.innerHTML += `<option value="${normalized}">${normalized}</option>`;
-      });
-    });
-});
-
-
-
-const input = document.getElementById("productInput");
-const dropdown = document.getElementById("productDropdown");
-const checkboxes = dropdown.querySelectorAll("input");
-
-input.addEventListener("click", () => {
-  dropdown.classList.toggle("d-none");
-});
-
-checkboxes.forEach(cb => {
-  cb.addEventListener("change", () => {
-    const selected = Array.from(checkboxes)
-      .filter(i => i.checked)
-      .map(i => i.value);
-
-    input.value = selected.join("; ");
-  });
-});
-
-// Close on outside click
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".position-relative")) {
-    dropdown.classList.add("d-none");
-  }
-});
-
-const Requestinput = document.getElementById("RequestproductInput");
-const Requestdropdown = document.getElementById("RequestproductDropdown");
-const skcheckboxes = Requestdropdown.querySelectorAll("input");
-
-
-Requestinput.addEventListener("click", () => {
-  Requestdropdown.classList.toggle("d-none");
-});
-
-skcheckboxes.forEach(cb => {
-  cb.addEventListener("change", () => {
-    const selected = Array.from(skcheckboxes)
-      .filter(i => i.checked)
-      .map(i => i.value);
-
-    Requestinput.value = selected.join("; ");
-  });
-});
-
-// Close on outside click
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".position-relative")) {
-    Requestdropdown.classList.add("d-none");
-  }
-});
-
-
-const businessinput = document.getElementById("business");
-const businessDropdown = document.getElementById("businessDropdown");
-const skdcheckboxes = businessDropdown.querySelectorAll("input");
-
-
-businessinput.addEventListener("click", () => {
-  businessDropdown.classList.toggle("d-none");
-});
-
-skdcheckboxes.forEach(cb => {
-  cb.addEventListener("change", () => {
-    const selected = Array.from(skdcheckboxes)
-      .filter(i => i.checked)
-      .map(i => i.value);
-
-    businessinput.value = selected.join("; ");
-  });
-});
-
-// Close on outside click
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".position-relative")) {
-    businessDropdown.classList.add("d-none");
-  }
-});
-
-// Real-time input filtering & validation
-(function () {
-    const nameEl = document.getElementById('name');
-    const emailEl = document.getElementById('email');
-    const designationEl = document.getElementById('Designation');
-    const phoneEl = document.getElementById('phone');
-    const companyEl = document.getElementById('company');
-    const pincodeEl = document.getElementById('pincode');
-    const countryEl = document.getElementById('country');
-    const stateEl = document.getElementById('state');
-    const cityEl = document.getElementById('city');
-    const productInputEl = document.getElementById('productInput');
-    const requestInputEl = document.getElementById('RequestproductInput');
-    const businessEl = document.getElementById('business');
-
-    function clearError(errorId) {
-        const el = document.getElementById(errorId);
-        if (el) {
-            el.textContent = "";
-            el.classList.add("d-none");
-        }
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[\d\s\+\-\(\)]+$/;
-
-    if (nameEl) {
-        nameEl.addEventListener('input', function () {
-            this.value = this.value.replace(/[0-9]/g, '');
-            if (this.value.trim().length >= 2 && !/\d/.test(this.value)) {
-                clearError('nameError');
-            }
-        });
-    }
-
-    if (emailEl) {
-        emailEl.addEventListener('input', function () {
-            if (emailRegex.test(this.value.trim())) {
-                clearError('emailError');
-            }
-        });
-    }
-
-    if (designationEl) {
-        designationEl.addEventListener('input', function () {
-            this.value = this.value.replace(/[0-9]/g, '');
-            if (this.value.trim().length > 0 && !/\d/.test(this.value)) {
-                clearError('designationError');
-            }
-        });
-    }
-
-    if (phoneEl) {
-        phoneEl.addEventListener('input', function () {
-            this.value = this.value.replace(/[a-zA-Z]/g, '');
-            if (this.value.trim().length > 0 && phoneRegex.test(this.value.trim())) {
-                clearError('phoneError');
-            }
-        });
-    }
-
-    if (companyEl) {
-        companyEl.addEventListener('input', function () {
-            if (this.value.trim().length > 0) {
-                clearError('companyError');
-            }
-        });
-    }
-
-    if (pincodeEl) {
-        pincodeEl.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '');
-            if (/^\d{4,10}$/.test(this.value)) {
-                clearError('pincodeError');
-            }
-        });
-    }
-
-    if (countryEl) {
-        countryEl.addEventListener('change', function () {
-            if (this.value && stateEl.value && cityEl.value) {
-                clearError('locationError');
-            }
-        });
-    }
-
-    if (stateEl) {
-        stateEl.addEventListener('change', function () {
-            if (countryEl.value && this.value && cityEl.value) {
-                clearError('locationError');
-            }
-        });
-    }
-
-    if (cityEl) {
-        cityEl.addEventListener('change', function () {
-            if (countryEl.value && stateEl.value && this.value) {
-                clearError('locationError');
-            }
-        });
-    }
-
-    if (productInputEl) {
-        productInputEl.addEventListener('change', function () {
-            if (this.value.trim().length > 0) {
-                clearError('productError');
-            }
-        });
-    }
-
-    if (requestInputEl) {
-        requestInputEl.addEventListener('change', function () {
-            if (this.value.trim().length > 0) {
-                clearError('requestError');
-            }
-        });
-    }
-
-    if (businessEl) {
-        businessEl.addEventListener('change', function () {
-            if (this.value.trim().length > 0) {
-                clearError('businessError');
-            }
-        });
-    }
-}());
-
-const fileInput = document.getElementById("attachment");
-const fileBtn = document.getElementById("fileBtn");
-const fileText = document.getElementById("fileText");
-const fileError = document.getElementById("fileError");
-
-const MAX_SIZE_MB = 30;
-const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-
-fileBtn.addEventListener("click", () => {
-  fileInput.click();
-});
-
-fileInput.addEventListener("change", () => {
-  const files = fileInput.files;
-
-  // Reset error
-  fileError.classList.add("d-none");
-  fileError.textContent = "";
-
-  const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
-
-  if (totalSize > MAX_SIZE_BYTES) {
-    fileInput.value = "";
-    fileText.textContent = "No file chosen (max 30 MB)";
-
-    fileError.textContent = "Total file size must not exceed 30 MB.";
-    fileError.classList.remove("d-none");
-
-    return;
-  }
-
-  if (files.length > 0) {
-    const names = Array.from(files).map(f => f.name);
-    fileText.textContent = names.join(", ");
-  } else {
-    fileText.textContent = "No file chosen (max 30 MB)";
-  }
-});
 
 // Image Lazy Loading - Load images only when they come into viewport
 $(function() {

@@ -5,6 +5,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bharat Audhyogik Rasayanam</title>
+  <meta name="description" content="Bharat Audhyogik Rasayanam (BAR Group India) is a trusted manufacturer and supplier of industrial chemicals including alumina, benzene, carbon products, pigments, reactive dyes, and inorganic solutions.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="https://bargroupindia.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bharat Audhyogik Rasayanam">
+  <meta property="og:title" content="Bharat Audhyogik Rasayanam | BAR Group India">
+  <meta property="og:description" content="Trusted industrial chemical manufacturer and supplier for domestic and export markets.">
+  <meta property="og:url" content="https://bargroupindia.com/">
+  <meta property="og:image" content="https://bargroupindia.com/assets/images/logos/Bar-white-trans.PNG">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bharat Audhyogik Rasayanam | BAR Group India">
+  <meta name="twitter:description" content="Trusted industrial chemical manufacturer and supplier for domestic and export markets.">
+  <meta name="twitter:image" content="https://bargroupindia.com/assets/images/logos/Bar-white-trans.PNG">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Bharat Audhyogik Rasayanam",
+    "alternateName": "BAR Group India",
+    "url": "https://bargroupindia.com/",
+    "logo": "https://bargroupindia.com/assets/images/logos/Bar-white-trans.PNG",
+    "email": "info@bargroupindia.com",
+    "telephone": "+91-8209851679",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Ground floor, Ophira - I, New Rajiv Gandhi Nagar",
+      "addressLocality": "Kota",
+      "addressRegion": "Rajasthan",
+      "postalCode": "324005",
+      "addressCountry": "IN"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Bharat Audhyogik Rasayanam",
+    "alternateName": "BAR Group India",
+    "url": "https://bargroupindia.com/"
+  }
+  </script>
   <link rel="icon" type="image/png" href="../assets/images/favicon_io/favicon-32x32.png" sizes="32x32"/>
   <link rel="stylesheet" href="../assets/libs/owl.carousel/dist/assets/owl.carousel.min.css">
   <link rel="stylesheet" href="../assets/libs/aos-master/dist/aos.css">
@@ -113,7 +155,7 @@
                       Whatsapp
                     </a>
 
-                    <a href="mailto:info@barindia.com"
+                    <a href="mailto:info@bargroupindia.com"
                       class="custom-contact-button btn btn-dark text-white fs-6 px-3 py-2 w-50 hstack justify-content-center border border-white" style="background-color: #707070; border-width: 0.75px !important;">
                       Mail
                     </a>
@@ -133,7 +175,7 @@
 
     <!--  Banner Section -->
     <section class="banner-section position-relative d-flex align-items-end min-vh-100">
-      <video class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" autoplay muted loop playsinline preload="metadata" loading="lazy">
+      <video id="banner-video" class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" autoplay muted loop playsinline preload="auto">
         <source src="../assets/images/backgrounds/banner-video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
@@ -1473,7 +1515,7 @@ Upon receipt of the above information, our team shall evaluate availability, con
               <p class="mb-0 fs-5" data-aos="fade-right" data-aos-delay="100" data-aos-duration="1000">Have a question about our products or need a quotation? Our team is ready to assist you with product details, availability, and bulk supply requirements.</p>
             </div>
             <div class="col-xl-8">
-              <form class="d-flex flex-column gap-3" enctype="multipart/form-data" data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000">
+              <form class="d-flex flex-column gap-3" enctype="multipart/form-data" data-endpoint="https://formsubmit.co/ajax/info@bargroupindia.com" data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000">
 
   <!-- ROW 1 -->
   <div class="row">
@@ -1613,28 +1655,11 @@ Upon receipt of the above information, our team shall evaluate availability, con
       placeholder="Additional Notes / Details" rows="1"></textarea>
   </div>
   
-  <small id="fileError" class="text-danger mt-1 d-none"></small>
-  <div class="d-flex flex-column">
-  <label class="small text-muted mb-2"></label>
-
-  <div class="file-upload-wrapper d-flex align-items-center gap-3">
-    
-    <!-- Hidden Input -->
-    <input type="file" id="attachment" class="file-input"
-      accept=".pdf,.doc,.docx,.jpg,.png" multiple>
-
-    <!-- Button -->
-    <button type="button" id="fileBtn" class="btn btn-dark btn-sm">
-      Choose Files
-    </button>
-
-    <!-- File Names -->
-    <span id="fileText" class="text-muted small">
-      No file chosen (max 30 MB)
-    </span>
-
+  <div>
+    <input type="url" id="attachmentLink" class="form-control border-0 border-bottom border-dark rounded-0"
+      placeholder="Attachment Link (Optional): Paste Google Drive / Dropbox / OneDrive URL">
+    <small class="text-muted mt-1 d-block">Attachments are optional. If needed, upload your file to Google Drive/Dropbox/OneDrive and paste the share link here.</small>
   </div>
-</div>
 
   <!-- BUTTON -->
   <button type="submit" class="btn w-100 justify-content-center btn-snd-msg mt-3">
@@ -1661,7 +1686,7 @@ style="background: linear-gradient(180deg, #5e5d5d 0%, #3c3c3c 45%, #000000 100%
             <h2 class="mb-0 text-white">Your Trusted Partner for Industrial Chemicals</h2>
             <div class="d-flex flex-column gap-2">
 
-  <a href="mailto:info@barindia.com"
+  <a href="mailto:info@bargroupindia.com"
     class="link-hover hstack gap-3 text-white fs-5 footer-contact-link">
 
     <iconify-icon icon="lucide:mail"
@@ -1670,7 +1695,7 @@ style="background: linear-gradient(180deg, #5e5d5d 0%, #3c3c3c 45%, #000000 100%
 
     <div>
       <span class="footer-contact-label"><b>Email:</b></span>
-      <span class="footer-contact-value"> info@barindia.com</span>
+      <span class="footer-contact-value"> info@bargroupindia.com</span>
     </div>
 
   </a>
@@ -1761,6 +1786,7 @@ style="background: linear-gradient(180deg, #5e5d5d 0%, #3c3c3c 45%, #000000 100%
   <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/libs/owl.carousel/dist/owl.carousel.min.js"></script>
   <script src="../assets/libs/aos-master/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="../assets/js/custom.js"></script>
   <!-- solar icons -->
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
@@ -1782,6 +1808,34 @@ style="background: linear-gradient(180deg, #5e5d5d 0%, #3c3c3c 45%, #000000 100%
   gtag('js', new Date());
 
   gtag('config', 'G-JMPM8Y9VE1');
+</script>
+<script>
+  (function () {
+    var vid = document.getElementById('banner-video');
+    if (!vid) return;
+    function tryPlay() {
+      vid.muted = true;
+      var p = vid.play();
+      if (p !== undefined) {
+        p.catch(function () {
+          // Retry on first user interaction
+          document.addEventListener('touchstart', function handler() {
+            vid.play();
+            document.removeEventListener('touchstart', handler);
+          }, { once: true });
+        });
+      }
+    }
+    if (vid.readyState >= 2) {
+      tryPlay();
+    } else {
+      vid.addEventListener('loadeddata', tryPlay);
+    }
+    // Also resume if page visibility changes (e.g. tab switch on mobile)
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) vid.play().catch(function () {});
+    });
+  })();
 </script>
 </body>
 
